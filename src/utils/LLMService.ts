@@ -27,7 +27,7 @@ export async function callLLM(messages: Array<{ role: "system" | "user" | "assis
   if (!provider || !apiKey) throw new Error("Brak ustawionego dostawcy lub klucza API");
 
   const defaults = {
-    openai: "o4-mini-deep-research-2025-06-26",
+    openai: "gpt-4.1-2025-04-14",
     openrouter: "openrouter/auto",
   } as const;
 
