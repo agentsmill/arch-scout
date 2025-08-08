@@ -203,8 +203,17 @@ function langFromPath(p: string) {
 
 async function buildImportsIndex(owner: string, repo: string, branch: string, tree: TreeItem[]) {
   const top = pickLargestCode(tree, 15);
+  const pri = pickPrioritySrc(tree);
+  // dedupe by path and limit to reasonable number to avoid rate limits
+  const seen = new Set<string>();
+  const candidates = [...top, ...pri].filter((t) => {
+    if (seen.has(t.path)) return false;
+    seen.add(t.path);
+    return true;
+  }).slice(0, 40);
+
   const items = await Promise.all(
-    top.map(async (t) => {
+    candidates.map(async (t) => {
       try {
         const content = await fetchRawFromBranch(owner, repo, branch, t.path);
         const head = content.substring(0, 20_000);

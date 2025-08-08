@@ -23,6 +23,27 @@ export const RepoForm = ({ onResult }: Props) => {
     setGhToken(existing);
     setAuthMode(existing ? "token" : "public");
   }, []);
+
+  const QUIPS = [
+    "Architektura idealna nie istnieje, ale zawsze można dodać jeszcze jedną warstwę abstrakcji.",
+    "Jeśli coś działa, to znaczy, że czas napisać testy jednostkowe... i integracyjne... i kontraktowe.",
+    "Monolit to mikroserwis, który jeszcze nie zrozumiał swojego przeznaczenia.",
+    "Skalowalność pozioma rozwiązuje wszystko — poza rachunkiem za chmurę.",
+    "Dokumentacja żyje. Niestety najczęściej własnym życiem.",
+    "Nie ma długów technicznych. Są tylko inwestycje o długim terminie zwrotu.",
+    "Kubernetes: bo jeden plik YAML dziennie trzyma DevOpsy w ruchu.",
+    "Caching to magia. Działa, dopóki nie działa.",
+    "Event-driven? Idealnie — teraz nikt nie wie, kto kogo woła.",
+    "CI/CD — Continuous Investigation / Continuous Debugging.",
+    "Każdy problem da się rozwiązać kolejną kolejką wiadomości.",
+    "Nie ma złych decyzji architektonicznych, są tylko mniej udokumentowane."
+  ];
+  const [quipIdx, setQuipIdx] = useState(0);
+  useEffect(() => {
+    if (!loading) return;
+    const id = setInterval(() => setQuipIdx((i) => (i + 1) % QUIPS.length), 3000);
+    return () => clearInterval(id);
+  }, [loading]);
   const analyze = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -105,6 +126,12 @@ export const RepoForm = ({ onResult }: Props) => {
         <div className="flex gap-3">
           <Button type="submit" variant="hero" disabled={loading}>{loading ? "Analizuję..." : "Analizuj repo"}</Button>
         </div>
+        {loading && (
+          <div className="mt-3 flex items-center gap-3 rounded-md border bg-card p-3">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-primary" aria-label="Ładowanie"></div>
+            <p className="text-sm text-muted-foreground">{QUIPS[quipIdx]}</p>
+          </div>
+        )}
       </form>
     </section>
   );
