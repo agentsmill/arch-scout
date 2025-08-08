@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { getRepoText, saveGitHubToken, getGitHubToken, clearGitHubToken } from "@/utils/GitHubService";
+import { getRepoContext, saveGitHubToken, getGitHubToken, clearGitHubToken } from "@/utils/GitHubService";
 import { callLLM, extractJSON } from "@/utils/LLMService";
 import type { Architecture } from "@/types/architecture";
 interface Props {
@@ -30,32 +30,27 @@ export const RepoForm = ({ onResult }: Props) => {
       if (authMode === "token" && !getGitHubToken()) {
         throw new Error("Brak zapisanego tokenu GitHub. Zapisz token lub wybierz tryb publiczny.");
       }
-      toast({ title: "Pobieram dokumentację", description: "Czytanie README i docs z GitHub" });
-      const text = await getRepoText(url);
+      toast({ title: "Pobieram dokumentację", description: "Buduję skondensowany kontekst z GitHub" });
+      const ctx = await getRepoContext(url);
 
       toast({ title: "Analiza LLM", description: "Tworzę diagram architektury" });
-      const system = `Jesteś architektem oprogramowania i edukatorem. Na podstawie README i dokumentacji repozytorium GitHub przygotuj zwięzły, edukacyjny JSON opisu architektury.
-- Skup się na: modułach/systemach, bazach danych i schematach tabel, API/endpoints, kolejkach/zdarzeniach, komunikacji między komponentami.
-- Wyjaśnij rolę każdego elementu w polu description/notes i cel tabel w purpose.
-- Zwróć wyłącznie poprawny JSON w poniższym schemacie.`;
+      const system = `Jesteś architektem oprogramowania i edukatorem. Na podstawie dostarczonych materiałów przygotuj zwięzły JSON opisu architektury zgodny ze schematem.
+- Zwróć WYŁĄCZNIE poprawny JSON (bez komentarzy i tekstu poza JSON).
+- Jeśli elementu nie rozpoznajesz: ustaw type="service", label="unknown-service:<krótki-domysł>", a description zaczynaj od "Niepewne: ..." i podaj prawdopodobną rolę z odwołaniami do plików.
+- Wykorzystaj importsIndex i ŹRÓDŁA do wnioskowania powiązań/tech. Nie halucynuj.
+- API podawaj tylko, gdy występują w materiałach. dbSchema twórz tylko z jawnych definicji.
+- Używaj zwięzłych, URL-safe id i zachowaj spójność między nodes/edges.`;
 
-      const user = `REPO: ${url}\n\nDOKUMENTACJA:\n\n${text.substring(0, 100000)}`;
+      const schemaHint = `Struktura JSON:\n{\n  \"nodes\": [\n    {\"id\":\"svc-api\",\"type\":\"service|db|api|queue|cache|frontend|external|cron\",\"label\":\"...\",\"description\":\"...\",\"tech\":[\"...\"],\"notes\":\"...\",\"dbSchema\":[{\"table\":\"...\",\"columns\":[{\"name\":\"id\",\"type\":\"uuid\",\"pk\":true,\"fk\":\"table.col?\"}],\"purpose\":\"...\"}]}],\n  \"edges\": [\n    {\"id\":\"e1\",\"source\":\"svc-api\",\"target\":\"db-main\",\"label\":\"POST /v1/items\",\"protocol\":\"http|rpc|sql|queue|event\",\"details\":\"...\",\"security\":\"...\",\"frequency\":\"...\"}\n  ],\n  \"legend\": {\"service\":\"usługi/serwisy\",\"db\":\"bazy danych\", \"api\":\"interfejsy API\"}\n}`;
 
-      const schemaHint = `Struktura JSON:
-{
-  "nodes": [
-    {"id":"svc-api","type":"service|db|api|queue|cache|frontend|external|cron","label":"...","description":"...","tech":["..."],"notes":"...","dbSchema":[{"table":"...","columns":[{"name":"id","type":"uuid","pk":true,"fk":"table.col?"}],"purpose":"..."}]}],
-  "edges": [
-    {"id":"e1","source":"svc-api","target":"db-main","label":"POST /v1/items","protocol":"http|rpc|sql|queue|event","details":"...","security":"...","frequency":"..."}
-  ],
-  "legend": {"service":"usługi/serwisy","db":"bazy danych", "api":"interfejsy API"}
-}`;
+      const metaBlock = `REPO: ${url}\nMETADATA:\n- Default branch: ${ctx.metadata.defaultBranch}\n- Languages: ${ctx.metadata.languages.join(", ")}`;
+      const importsBlock = `importsIndex:\n${JSON.stringify(ctx.importsIndex, null, 2).substring(0, 20000)}`;
+      const docsBlock = `ŹRÓDŁA (wycinki):\n${ctx.contextText.substring(0, 100000)}`;
 
       const content = await callLLM([
         { role: "system", content: system },
-        { role: "user", content: `${schemaHint}\n\n${user}` },
+        { role: "user", content: `${schemaHint}\n\n${metaBlock}\n\n${importsBlock}\n\n${docsBlock}` },
       ]);
-
       const json = extractJSON(content);
       onResult(json as Architecture);
       toast({ title: "Gotowe", description: "Diagram został zaktualizowany" });
