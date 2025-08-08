@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Pencil, Save, X } from "lucide-react";
+import { useI18n } from "@/i18n";
 
 const typeLabel: Record<string, string> = {
   service: "Service",
@@ -56,6 +57,7 @@ const ArchNodeCard = memo(({ id, data }: any) => {
   const [name, setName] = useState(label || "");
   const [desc, setDesc] = useState(description || "");
   const { setNodes } = useReactFlow();
+  const { t } = useI18n();
 
   const onSave = () => {
     setNodes((nds) =>
@@ -89,7 +91,7 @@ const ArchNodeCard = memo(({ id, data }: any) => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="nodrag h-7 text-sm"
-              aria-label="Nazwa węzła"
+              aria-label={t("node_name")}
             />
           ) : (
             label
@@ -98,15 +100,15 @@ const ArchNodeCard = memo(({ id, data }: any) => {
         <div className="flex items-center gap-1">
           <Badge variant="secondary">{typeLabel[type] || type}</Badge>
           {!editing ? (
-            <Button variant="ghost" size="icon" aria-label="Edytuj" onClick={() => setEditing(true)}>
+            <Button variant="ghost" size="icon" aria-label={t("edit")} onClick={() => setEditing(true)}>
               <Pencil className="h-4 w-4" />
             </Button>
           ) : (
             <>
-              <Button variant="secondary" size="icon" aria-label="Zapisz" onClick={onSave}>
+              <Button variant="secondary" size="icon" aria-label={t("save_action")} onClick={onSave}>
                 <Save className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" aria-label="Anuluj" onClick={onCancel}>
+              <Button variant="ghost" size="icon" aria-label={t("cancel")} onClick={onCancel}>
                 <X className="h-4 w-4" />
               </Button>
             </>
@@ -120,7 +122,7 @@ const ArchNodeCard = memo(({ id, data }: any) => {
             onChange={(e) => setDesc(e.target.value)}
             rows={2}
             className="nodrag text-xs"
-            aria-label="Opis węzła"
+            aria-label={t("node_desc")}
           />
         ) : (
           description && (
@@ -159,6 +161,7 @@ function mapToRF(arch?: Architecture) {
 interface Props { arch?: Architecture }
 
 export const ArchitectureDiagram = ({ arch }: Props) => {
+  const { t } = useI18n();
   const { nodes: initialNodes, edges: initialEdges } = useMemo(() => mapToRF(arch), [arch]);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -256,15 +259,15 @@ export const ArchitectureDiagram = ({ arch }: Props) => {
   };
 
   return (
-    <section className="w-full rounded-lg border bg-card" aria-label="Diagram architektury">
+    <section className="w-full rounded-lg border bg-card" aria-label={t("diagram_title")}>
       <div className="flex items-center justify-between p-3 border-b">
-        <div className="font-semibold">Diagram architektury</div>
+        <div className="font-semibold">{t("diagram_title")}</div>
         <div className="flex gap-2">
-          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={() => add("service")}>+ Service</button>
-          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={() => add("db")}>+ DB</button>
-          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={() => add("api")}>+ API</button>
-          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={downloadJSON}>Pobierz JSON</button>
-          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={downloadMarkdown}>Pobierz Markdown</button>
+          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={() => add("service")}>{t("add_service")}</button>
+          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={() => add("db")}>{t("add_db")}</button>
+          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={() => add("api")}>{t("add_api")}</button>
+          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={downloadJSON}>{t("download_json")}</button>
+          <button className="rounded-md px-3 py-1 text-sm bg-secondary text-secondary-foreground" onClick={downloadMarkdown}>{t("download_md")}</button>
         </div>
       </div>
       <div style={{ width: "100%", height: 520 }}>

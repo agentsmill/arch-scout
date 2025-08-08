@@ -38,6 +38,10 @@ const MESSAGES: Record<Lang, Record<string, string>> = {
     token_saved_desc: "GitHub token stored locally (localStorage)",
     token_cleared: "Token removed",
     token_cleared_desc: "Token cleared from the browser",
+    error_validate: "Error",
+    error_api_missing: "Choose provider and enter API key",
+    settings_saved: "Saved",
+    settings_saved_desc: "API settings have been saved",
 
     llm_settings: "LLM Settings",
     providers_supported: "Supported providers: OpenAI and OpenRouter",
@@ -48,6 +52,8 @@ const MESSAGES: Record<Lang, Record<string, string>> = {
     loading_models: "Loading models...",
     choose_provider: "Choose provider",
     choose_model: "Choose model",
+    model_recommended: "(recommended)",
+    model_auto_select: "(auto-select)",
 
     diagram_title: "Architecture diagram",
     add_service: "+ Service",
@@ -96,6 +102,10 @@ const MESSAGES: Record<Lang, Record<string, string>> = {
     token_saved_desc: "Token GitHub przechowywany lokalnie (localStorage)",
     token_cleared: "Usunięto token",
     token_cleared_desc: "Wyczyszczono token z przeglądarki",
+    error_validate: "Błąd",
+    error_api_missing: "Wybierz dostawcę i wprowadź klucz API",
+    settings_saved: "Zapisano",
+    settings_saved_desc: "Ustawienia API zostały zapisane",
 
     llm_settings: "Ustawienia LLM",
     providers_supported: "Obsługiwani dostawcy: OpenAI lub OpenRouter",
@@ -106,6 +116,8 @@ const MESSAGES: Record<Lang, Record<string, string>> = {
     loading_models: "Ładowanie modeli...",
     choose_provider: "Wybierz dostawcę",
     choose_model: "Wybierz model",
+    model_recommended: "(zalecany)",
+    model_auto_select: "(auto-wybór)",
 
     diagram_title: "Diagram architektury",
     add_service: "+ Service",
