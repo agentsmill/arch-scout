@@ -47,7 +47,7 @@ export const SettingsPanel = () => {
         </div>
         <div className="grid gap-2 md:col-span-3">
           <Label>Model (opcjonalnie)</Label>
-          <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="np. gpt-4o-mini lub openrouter/auto" />
+          <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="np. o4-mini-deep-research-2025-06-26 lub openrouter/auto" />
         </div>
       </div>
       <div className="flex justify-end">
