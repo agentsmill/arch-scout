@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,23 +8,17 @@ import { Provider, Settings } from "@/utils/LLMService";
 
 export const SettingsPanel = () => {
   const { toast } = useToast();
-  const [provider, setProvider] = useState<Provider | undefined>();
-  const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("");
-
-  useEffect(() => {
-    const s = Settings.get();
-    setProvider(s.provider as Provider);
-    setApiKey(s.apiKey || "");
-    setModel(s.model || "");
-  }, []);
+  const init = Settings.get();
+  const [provider, setProvider] = useState<Provider | "">((init.provider as Provider) ?? "");
+  const [apiKey, setApiKey] = useState(init.apiKey || "");
+  const [model, setModel] = useState(init.model || "");
 
   const onSave = () => {
     if (!provider || !apiKey) {
       toast({ title: "Błąd", description: "Wybierz dostawcę i wprowadź klucz API", variant: "destructive" });
       return;
     }
-    Settings.save(provider, apiKey, model);
+    Settings.save(provider as Provider, apiKey, model);
     toast({ title: "Zapisano", description: "Ustawienia API zostały zapisane" });
   };
 

@@ -32,42 +32,75 @@ export async function callLLM(messages: Array<{ role: "system" | "user" | "assis
   } as const;
 
   if (provider === "openai") {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: model || defaults.openai,
-        messages,
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-      }),
-    });
-    if (!res.ok) throw new Error(`OpenAI błąd: ${res.status}`);
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content as string;
+    const selected = (model || defaults.openai).trim();
+    const endpoint = "https://api.openai.com/v1/chat/completions";
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    } as const;
+
+    const attempt = async (body: Record<string, unknown>) => {
+      const res = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+      if (!res.ok) {
+        let err: any = undefined;
+        try { err = await res.json(); } catch {}
+        const code = err?.error?.code; const message = err?.error?.message;
+        throw { status: res.status, code, message };
+      }
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content as string;
+    };
+
+    try {
+      // Prefer JSON mode + temperature for supporting models
+      return await attempt({ model: selected, messages, temperature: 0.2, response_format: { type: "json_object" } });
+    } catch (e: any) {
+      // Retry without temperature/response_format if unsupported
+      if (e?.status === 400) {
+        try {
+          return await attempt({ model: selected, messages });
+        } catch (e2: any) {
+          if (selected !== defaults.openai) {
+            // Fallback to safe default model
+            return await attempt({ model: defaults.openai, messages, temperature: 0.2, response_format: { type: "json_object" } });
+          }
+          throw new Error(`OpenAI błąd: ${e2?.status || ""} ${e2?.message || ""}`.trim());
+        }
+      }
+      throw new Error(`OpenAI błąd: ${e?.status || ""} ${e?.message || ""}`.trim());
+    }
   }
 
   if (provider === "openrouter") {
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "EduDiag",
-      },
-      body: JSON.stringify({
-        model: model || defaults.openrouter,
-        messages,
-        temperature: 0.2,
-      }),
-    });
-    if (!res.ok) throw new Error(`OpenRouter błąd: ${res.status}`);
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content as string;
+    const selected = (model || defaults.openrouter).trim();
+    const endpoint = "https://openrouter.ai/api/v1/chat/completions";
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      "HTTP-Referer": window.location.origin,
+      "X-Title": "EduDiag",
+    } as const;
+
+    const attempt = async (body: Record<string, unknown>) => {
+      const res = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+      if (!res.ok) {
+        let err: any = undefined;
+        try { err = await res.json(); } catch {}
+        const code = err?.error?.code; const message = err?.error?.message;
+        throw { status: res.status, code, message };
+      }
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content as string;
+    };
+
+    try {
+      return await attempt({ model: selected, messages, temperature: 0.2 });
+    } catch (e: any) {
+      if (e?.status === 400) {
+        return await attempt({ model: selected, messages });
+      }
+      throw new Error(`OpenRouter błąd: ${e?.status || ""} ${e?.message || ""}`.trim());
+    }
   }
 
   throw new Error("Nieznany dostawca");
