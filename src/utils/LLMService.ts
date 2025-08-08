@@ -1,0 +1,84 @@
+export type Provider = "openai" | "openrouter";
+
+const STORAGE_KEYS = {
+  provider: "edudiag_provider",
+  apiKey: "edudiag_api_key",
+  model: "edudiag_model",
+};
+
+export const Settings = {
+  save(provider: Provider, apiKey: string, model?: string) {
+    localStorage.setItem(STORAGE_KEYS.provider, provider);
+    localStorage.setItem(STORAGE_KEYS.apiKey, apiKey);
+    if (model) localStorage.setItem(STORAGE_KEYS.model, model);
+  },
+  get() {
+    return {
+      provider: (localStorage.getItem(STORAGE_KEYS.provider) as Provider) ||
+        (localStorage.getItem(STORAGE_KEYS.apiKey) ? ("openai" as Provider) : undefined),
+      apiKey: localStorage.getItem(STORAGE_KEYS.apiKey) || "",
+      model: localStorage.getItem(STORAGE_KEYS.model) || "",
+    } as { provider?: Provider; apiKey: string; model: string };
+  },
+};
+
+export async function callLLM(messages: Array<{ role: "system" | "user" | "assistant"; content: string }>) {
+  const { provider, apiKey, model } = Settings.get();
+  if (!provider || !apiKey) throw new Error("Brak ustawionego dostawcy lub klucza API");
+
+  const defaults = {
+    openai: "gpt-4o-mini",
+    openrouter: "openrouter/auto",
+  } as const;
+
+  if (provider === "openai") {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model || defaults.openai,
+        messages,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!res.ok) throw new Error(`OpenAI błąd: ${res.status}`);
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content as string;
+  }
+
+  if (provider === "openrouter") {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        "HTTP-Referer": window.location.origin,
+        "X-Title": "EduDiag",
+      },
+      body: JSON.stringify({
+        model: model || defaults.openrouter,
+        messages,
+        temperature: 0.2,
+      }),
+    });
+    if (!res.ok) throw new Error(`OpenRouter błąd: ${res.status}`);
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content as string;
+  }
+
+  throw new Error("Nieznany dostawca");
+}
+
+export function extractJSON(text: string) {
+  if (!text) throw new Error("Pusta odpowiedź LLM");
+  const fenceMatch = text.match(/```json[\s\S]*?```/i) || text.match(/```[\s\S]*?```/);
+  const raw = fenceMatch ? fenceMatch[0].replace(/```json|```/gi, "").trim() : text;
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  const slice = start >= 0 && end >= 0 ? raw.slice(start, end + 1) : raw;
+  return JSON.parse(slice);
+}
