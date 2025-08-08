@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getRepoContext, saveGitHubToken, getGitHubToken, clearGitHubToken } from "@/utils/GitHubService";
 import { callLLM, extractJSON } from "@/utils/LLMService";
 import type { Architecture } from "@/types/architecture";
+import { useI18n } from "@/i18n";
 interface Props {
   onResult: (arch: Architecture) => void;
 }
