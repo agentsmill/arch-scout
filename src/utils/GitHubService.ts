@@ -11,10 +11,33 @@ export function parseGitHubUrl(url: string): { owner: string; repo: string } {
   }
 }
 
+export const GH_TOKEN_KEY = "gh_token";
+
+export function saveGitHubToken(token: string) {
+  try {
+    if (token) localStorage.setItem(GH_TOKEN_KEY, token);
+  } catch {}
+}
+
+export function getGitHubToken(): string {
+  try {
+    return localStorage.getItem(GH_TOKEN_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function clearGitHubToken() {
+  try {
+    localStorage.removeItem(GH_TOKEN_KEY);
+  } catch {}
+}
+
 async function fetchRaw(url: string) {
-  const res = await fetch(url, {
-    headers: { Accept: "application/vnd.github.v3.raw" },
-  });
+  const headers: Record<string, string> = { Accept: "application/vnd.github.v3.raw" };
+  const token = getGitHubToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`GitHub błąd: ${res.status}`);
   return res.text();
 }

@@ -102,7 +102,7 @@ export const ArchitectureDiagram = ({ arch }: Props) => {
   };
 
   return (
-    <section className="w-full rounded-lg border bg-card">
+    <section className="w-full rounded-lg border bg-card" aria-label="Diagram architektury">
       <div className="flex items-center justify-between p-3 border-b">
         <div className="font-semibold">Diagram architektury</div>
         <div className="flex gap-2">

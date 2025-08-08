@@ -4,6 +4,7 @@ import { ArchitectureDiagram } from "@/components/ArchitectureDiagram";
 import { useMemo, useState } from "react";
 import type { Architecture } from "@/types/architecture";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Index = () => {
   const [arch, setArch] = useState<Architecture | undefined>(undefined);
@@ -15,6 +16,14 @@ const Index = () => {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <header className="container py-10" style={heroBg}>
+        <div className="mb-6">
+          <Alert>
+            <AlertTitle>Security & Privacy by Design</AlertTitle>
+            <AlertDescription>
+              Aplikacja działa wyłącznie w Twojej przeglądarce. Nie przetwarzamy żadnych danych użytkownika ani nie wysyłamy tokenów na serwer.
+            </AlertDescription>
+          </Alert>
+        </div>
         <div className="text-center space-y-6">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Interaktywny diagram architektury z GitHub i LLM</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
