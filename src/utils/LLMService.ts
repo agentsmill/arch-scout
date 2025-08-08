@@ -39,6 +39,8 @@ export async function callLLM(messages: Array<{ role: "system" | "user" | "assis
       Authorization: `Bearer ${apiKey}`,
     } as const;
 
+    const isReasoning = /(?:gpt-5|o3|o4|deep-research)/i.test(selected);
+
     const attempt = async (body: Record<string, unknown>) => {
       const res = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
       if (!res.ok) {
@@ -51,20 +53,43 @@ export async function callLLM(messages: Array<{ role: "system" | "user" | "assis
       return data.choices?.[0]?.message?.content as string;
     };
 
+    const base = { model: selected, messages } as Record<string, unknown>;
+    const primary = {
+      ...base,
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      ...(isReasoning ? { reasoning: { effort: "high" } } : {}),
+    };
+    const retryNoJsonTemp = { ...base, ...(isReasoning ? { reasoning: { effort: "high" } } : {}) };
+    const retryNoReasoning = { ...base };
+
     try {
-      // Prefer JSON mode + temperature for supporting models
-      return await attempt({ model: selected, messages, temperature: 0.2, response_format: { type: "json_object" } });
+      return await attempt(primary);
     } catch (e: any) {
-      // Retry without temperature/response_format if unsupported
       if (e?.status === 400) {
         try {
-          return await attempt({ model: selected, messages });
+          return await attempt(retryNoJsonTemp);
         } catch (e2: any) {
-          if (selected !== defaults.openai) {
-            // Fallback to safe default model
-            return await attempt({ model: defaults.openai, messages, temperature: 0.2, response_format: { type: "json_object" } });
+          try {
+            return await attempt(retryNoReasoning);
+          } catch (e3: any) {
+            if (selected !== defaults.openai) {
+              const fallback = {
+                model: defaults.openai,
+                messages,
+                temperature: 0.2,
+                response_format: { type: "json_object" },
+                reasoning: { effort: "high" },
+              } as Record<string, unknown>;
+              try {
+                return await attempt(fallback);
+              } catch (e4: any) {
+                const fallbackNoExtras = { model: defaults.openai, messages } as Record<string, unknown>;
+                return await attempt(fallbackNoExtras);
+              }
+            }
+            throw new Error(`OpenAI błąd: ${e3?.status || ""} ${e3?.message || ""}`.trim());
           }
-          throw new Error(`OpenAI błąd: ${e2?.status || ""} ${e2?.message || ""}`.trim());
         }
       }
       throw new Error(`OpenAI błąd: ${e?.status || ""} ${e?.message || ""}`.trim());
