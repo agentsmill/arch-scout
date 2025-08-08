@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useEffect } from "react";
 import {
   ReactFlow,
   Background,
@@ -89,8 +89,13 @@ export const ArchitectureDiagram = ({ arch }: Props) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  const onConnect = useCallback((connection: Connection) => setEdges((eds) => addEdge({ ...connection, animated: true }, eds)), []);
+  useEffect(() => {
+    const { nodes: mappedNodes, edges: mappedEdges } = mapToRF(arch);
+    setNodes(mappedNodes);
+    setEdges(mappedEdges);
+  }, [arch, setNodes, setEdges]);
 
+  const onConnect = useCallback((connection: Connection) => setEdges((eds) => addEdge({ ...connection, animated: true }, eds)), []);
   const add = (type: ArchNode["type"]) => {
     const id = `${type}-${nodes.length + 1}`;
     setNodes((nds) => nds.concat({ id, type: "archNode", data: { node: { id, type, label: `${type} ${nds.length + 1}` } } as Record<string, unknown>, position: { x: 80 + nds.length * 10, y: 60 + nds.length * 10 } }));
